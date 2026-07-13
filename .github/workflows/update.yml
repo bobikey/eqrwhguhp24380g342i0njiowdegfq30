@@ -33,11 +33,10 @@ jobs:
           SOURCECRAFT_TOKEN: ${{ secrets.SOURCECRAFT_TOKEN }}
           SOURCECRAFT_REPO: ${{ secrets.SOURCECRAFT_REPO }}
         run: |
-          # Вытягиваем логин из названия репозитория для правильной авторизации
-          REPO_OWNER=$(echo $SOURCECRAFT_REPO | cut -d'/' -f1)
+          # Используем правильный домен для git (git.sourcecraft.dev) и username (anyname) согласно документации
           
           # 1. Клонируем репозиторий с хостинга во временную папку remote_repo
-          git clone https://${REPO_OWNER}:${SOURCECRAFT_TOKEN}@sourcecraft.dev/${SOURCECRAFT_REPO}.git remote_repo
+          git clone https://anyname:${SOURCECRAFT_TOKEN}@git.sourcecraft.dev/${SOURCECRAFT_REPO}.git remote_repo
           
           # 2. Перемещаем свежесгенерированный файл с ключами в эту папку (перезаписываем старый)
           mv base64_player_id_game.txt remote_repo/
