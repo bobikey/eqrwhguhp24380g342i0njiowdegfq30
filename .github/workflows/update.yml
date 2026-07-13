@@ -27,23 +27,26 @@ jobs:
           TG_CHANNEL_URL: ${{ secrets.TG_CHANNEL_URL }}
         run: node index.js
 
-      - name: Отправляем файл ТОЛЬКО в SourceCraft
+      - name: Отправляем файл на хостинг
         env:
           # Токен и название репозитория берутся из секретов GitHub
           SOURCECRAFT_TOKEN: ${{ secrets.SOURCECRAFT_TOKEN }}
           SOURCECRAFT_REPO: ${{ secrets.SOURCECRAFT_REPO }}
         run: |
-          # 1. Клонируем репозиторий с SourceCraft во временную папку sc_repo
-          git clone https://${SOURCECRAFT_TOKEN}@sourcecraft.dev/${SOURCECRAFT_REPO}.git sc_repo
+          # Вытягиваем логин из названия репозитория для правильной авторизации
+          REPO_OWNER=$(echo $SOURCECRAFT_REPO | cut -d'/' -f1)
+          
+          # 1. Клонируем репозиторий с хостинга во временную папку remote_repo
+          git clone https://${REPO_OWNER}:${SOURCECRAFT_TOKEN}@sourcecraft.dev/${SOURCECRAFT_REPO}.git remote_repo
           
           # 2. Перемещаем свежесгенерированный файл с ключами в эту папку (перезаписываем старый)
-          mv base64_player_id_game.txt sc_repo/
+          mv base64_player_id_game.txt remote_repo/
           
-          # 3. Переходим в папку, коммитим и пушим обратно на SourceCraft
-          cd sc_repo
+          # 3. Переходим в папку, коммитим и пушим обратно на хостинг
+          cd remote_repo
           git config --local user.email "action@github.com"
           git config --local user.name "Auto Updater"
           git add base64_player_id_game.txt
           
-          # Коммитим и пушим, только если файл обновился. На сам GitHub ничего не улетит!
+          # Коммитим и пушим, только если файл обновился
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update subscription" && git push)
