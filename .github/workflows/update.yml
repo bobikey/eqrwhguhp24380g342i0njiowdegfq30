@@ -1,0 +1,49 @@
+name: Auto-Update VPN Sub
+
+on:
+  schedule:
+    - cron: '0 */5 * * *' # Запускать каждые 5 часов
+  workflow_dispatch: # Позволяет запустить экшен вручную
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Скачиваем код (Checkout)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Важно для корректного пуша в другой репозиторий
+
+      - name: Настраиваем Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Устанавливаем зависимости
+        run: npm install
+
+      - name: Запускаем скрипт-парсер
+        env:
+          TG_CHANNEL_URL: ${{ secrets.TG_CHANNEL_URL }}
+        run: node index.js
+
+      - name: Отправляем файл ТОЛЬКО в SourceCraft
+        env:
+          # Токен и название репозитория берутся из секретов GitHub
+          SOURCECRAFT_TOKEN: ${{ secrets.SOURCECRAFT_TOKEN }}
+          SOURCECRAFT_REPO: ${{ secrets.SOURCECRAFT_REPO }}
+        run: |
+          # 1. Клонируем репозиторий с SourceCraft во временную папку sc_repo
+          git clone https://${SOURCECRAFT_TOKEN}@sourcecraft.dev/${SOURCECRAFT_REPO}.git sc_repo
+          
+          # 2. Перемещаем свежесгенерированный файл с ключами в эту папку (перезаписываем старый)
+          mv base64_player_id_game.txt sc_repo/
+          
+          # 3. Переходим в папку, коммитим и пушим обратно на SourceCraft
+          cd sc_repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "Auto Updater"
+          git add base64_player_id_game.txt
+          
+          # Коммитим и пушим, только если файл обновился. На сам GitHub ничего не улетит!
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update subscription" && git push)
