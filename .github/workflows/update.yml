@@ -2,7 +2,7 @@ name: Auto-Update VPN Sub
 
 on:
   schedule:
-    - cron: '0 */5 * * *' # Запускать каждые 5 часов
+    - cron: '0 */3 * * *' # Запускать каждые 3 часа
   workflow_dispatch: # Позволяет запустить экшен вручную
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
       - name: Скачиваем код (Checkout)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Важно для корректного пуша в другой репозиторий
+          fetch-depth: 0
 
       - name: Настраиваем Node.js
         uses: actions/setup-node@v4
@@ -25,27 +25,28 @@ jobs:
       - name: Запускаем скрипт-парсер
         env:
           TG_CHANNEL_URL: ${{ secrets.TG_CHANNEL_URL }}
+          TG_HALYAVA_URL: ${{ secrets.TG_HALYAVA_URL }}
         run: node index.js
 
-      - name: Отправляем файл на хостинг
+      - name: Отправляем файлы на хостинг
         env:
-          # Токен и название репозитория берутся из секретов GitHub
           SOURCECRAFT_TOKEN: ${{ secrets.SOURCECRAFT_TOKEN }}
           SOURCECRAFT_REPO: ${{ secrets.SOURCECRAFT_REPO }}
         run: |
           # Используем правильный домен для git (git.sourcecraft.dev) и username (anyname) согласно документации
-          
+
           # 1. Клонируем репозиторий с хостинга во временную папку remote_repo
           git clone https://anyname:${SOURCECRAFT_TOKEN}@git.sourcecraft.dev/${SOURCECRAFT_REPO}.git remote_repo
-          
-          # 2. Перемещаем свежесгенерированный файл с ключами в эту папку (перезаписываем старый)
+
+          # 2. Перемещаем оба свежесгенерированных файла в эту папку (перезаписываем старые)
           mv base64_player_id_game.txt remote_repo/
-          
+          mv base64_player_id_game2.txt remote_repo/
+
           # 3. Переходим в папку, коммитим и пушим обратно на хостинг
           cd remote_repo
           git config --local user.email "action@github.com"
           git config --local user.name "Auto Updater"
-          git add base64_player_id_game.txt
-          
-          # Коммитим и пушим, только если файл обновился
+          git add base64_player_id_game.txt base64_player_id_game2.txt
+
+          # Коммитим и пушим, только если файлы обновились
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update subscription" && git push)
