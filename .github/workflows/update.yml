@@ -22,18 +22,10 @@ jobs:
       - name: Устанавливаем зависимости
         run: npm install
 
-      - name: Скачиваем xray для проверки ключей
-        run: |
-          wget -q "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip" -O xray.zip
-          unzip -q xray.zip xray -d ./xray_bin
-          chmod +x ./xray_bin/xray
-          echo "xray version: $(./xray_bin/xray version | head -1)"
-
       - name: Запускаем скрипт-парсер
         env:
           TG_CHANNEL_URL: ${{ secrets.TG_CHANNEL_URL }}
           TG_HALYAVA_URL: ${{ secrets.TG_HALYAVA_URL }}
-          XRAY_PATH: ./xray_bin/xray
         run: node index.js
 
       - name: Отправляем файлы на хостинг
